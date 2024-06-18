@@ -27,6 +27,11 @@ Every step handles the volume in separated chunks.
 ### Synthetic Dataset
 - **script** `.\synthetic_data\dataset.py`
 - **Description:**  Contains a script to generate a completely synthetic dataset.
+    Example to create the dataset:
+    ```python
+    block_size = [128, 128, 128]
+    synthetic_dataset = SyntheticDataset(num_samples=1000, array_shape=tuple(block_size), transform=get_transforms(tuple(block_size)))
+    ```
 
 ## Upcoming Additions
 
