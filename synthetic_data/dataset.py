@@ -121,3 +121,7 @@ def get_transforms(patch_size):
         ContrastAugmentationTransform(),
     ])
     return transforms
+
+### Example to create the dataset:
+# block_size = [128, 128, 128]
+# synthetic_dataset = SyntheticDataset(num_samples=1000, array_shape=tuple(block_size), transform=get_transforms(tuple(block_size)))
