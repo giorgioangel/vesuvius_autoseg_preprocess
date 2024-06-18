@@ -24,6 +24,10 @@ Every step handles the volume in separated chunks.
 - **Notebook:** `4_surface_detection.ipynb`
 - **Description:** Performs surface detection using thresholding on the gradient magnitude and the absolute value of the determinant of the Hessian for each voxel. The gradient and Hessian are estimated using a 3D implementation of Noise Robust Gradient operators by Pavel Holoborodko, combining isotropic noise suppression and precise gradient estimation. Non-Maximum Suppression is applied to the result.
 
+### Synthetic Dataset
+- **script** `.\synthetic_data\dataset.py`
+- **Description:**  Contains a script to generate a completely synthetic dataset.
+
 ## Upcoming Additions
 
 - **Requirements File:** A file to download the correct dependencies for running the algorithms.
