@@ -1,0 +1,56 @@
+wandb:
+  project: "my_project"
+  run_name: "experiment_1"
+
+distributed:
+  world_size: 8
+  master_addr: "localhost"
+  master_port: "12355"
+
+data:
+  input_file: "/home/giorgio/scrolls/scroll1/volumes/20230205180739.b2nd"
+  label_file: "/home/giorgio/scrolls/scroll1/volumes/labels/labels.b2nd"
+  synth_input_folder: "/home/giorgio/Projects/AesFA/output/train"
+  synth_label_folder: "/home/giorgio/Projects/AesFA/labels"
+  cubes_folder: "/home/giorgio/scrolls/scroll1/finished_cubes/"
+  val_cubes_folder: "/home/giorgio/scrolls/scroll1/finished_cubes/"
+  block_size: [256, 256, 256]
+
+model:
+  in_channels: 1
+  out_channels: 1
+  channels: [64, 128, 320, 512, 768, 1024]
+  strides: [4, 2, 2, 2, 2]
+  kernel_size: [7, 3, 3, 3, 3]
+
+training:
+  seed: 1234
+  current_checkpoint: "./checkpoints/final_model_cubes.pth"
+  prefetch_factor: 4
+  persistent_workers: True
+  ema_beta: 0.998
+  num_epochs: 30
+  scheduler_epochs: 200
+  epoch_size: 100
+  batch_size: 7
+  workers: 16
+  amp: True
+  warmup_factor: 1
+  #lr: 0.0001
+  lr: 0.001
+  min_lr: 0.000001
+  weight_decay: 0.00001
+  max_grad_norm: 10
+  synthetic_ratio: 0.4
+  boundary_alpha: 1
+  ema_step: 10
+  
+validation:
+  epochs: 5
+
+inference:
+  seed: 42
+  weights_path: './final_model_boundary_scroll1.pth'
+  output_dir: './inference_output/'
+  max_chunk_size: 128
+  batch_size: 32

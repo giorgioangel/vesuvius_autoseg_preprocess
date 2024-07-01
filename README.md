@@ -33,6 +33,11 @@ Every step handles the volume in separated chunks.
     synthetic_dataset = SyntheticDataset(num_samples=1000, array_shape=tuple(block_size), transform=get_transforms(tuple(block_size)))
     ```
 
+### Semantic Segmentation
+- **training script** `.\unet\train.py --config config.yaml`
+- **Description**: Training script to train a 3D UNet for Semantic Segmentation on several datasets. Intuitive code. Used loss function is a mixture of Unified Symmetric Focal Loss [(Yeung et al., 2021)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8785124/) and Boundary Loss [(Kervadec et al., 2021)](https://arxiv.org/abs/1812.07032), which are particularly good on imbalanced 3D segmentation datasets. Exponential Moving Average of weights (EMA) is applied to stabilize the training, also because in the literature there are promising results where it has been used to improve training performance in contexts with noisy labels [(Morales-Brotons et al., 2024)](https://openreview.net/forum?id=2M9CUnYnBA), which is exactly our scenario because we don't have (yet) ground truths.
+- **checkpoints**: (https://dl.ash2txt.org/other/semantic-segmentation-checkpoints/)
+
 ## Upcoming Additions
 
 - **Requirements File:** A file to download the correct dependencies for running the algorithms.
@@ -64,4 +69,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgements
 
-Special thanks to [Brett Olsen](https://github.com/caethan) for the original implementation of the GPU version of Non-Local-Means, which is based on the skimage version.
+Special thanks to [Brett Olsen](https://github.com/caethan) for the original implementation of the GPU version of Non-Local-Means, which is based on the skimage version. Tim Skinner for the Resisudal Unet edit of the MONAI 3D Unet.
