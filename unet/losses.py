@@ -1,4 +1,4 @@
-# Giorgio Angelotti - 2024 - Different Losses for imbalanced datasets
+# Giorgio Angelotti - 2023 - Different Losses for imbalanced datasets
 
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ from typing import List
 
 from torch import Tensor, einsum
 
-__all__ = ['BinaryFocalLoss', 'TraditionalBinaryFocalLoss', 'DiceLoss', 'BatchDiceLoss', 'BoundaryLoss', 'BoundaryFocalLoss',
+__all__ = ['BinaryFocalLoss', 'TraditionalBinaryFocalLoss', 'DiceLoss', 'BatchDiceLoss',
            'FocalTverskyLoss', 'SymmetricUnifiedFocalLoss', 'CrossFocalLoss', 'SoftArgmaxMSELoss', 'SurfaceLoss']
 
 class BinaryFocalLoss(nn.Module):
@@ -33,7 +33,33 @@ class BinaryFocalLoss(nn.Module):
             return F_loss.sum()
         else:
             return F_loss
+              
+class MaskedBinaryFocalLoss(nn.Module):
+    def __init__(self, alpha:float=0.25, gamma:float=2.0, reduction:str='mean'):
+        super(MaskedBinaryFocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets, mask):
+        # Compute the binary cross entropy with logits loss
+        BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
         
+        # Compute the focal loss adjustment
+        p_t = torch.exp(-BCE_loss)
+        at = self.alpha * targets + (1 - self.alpha) * (1 - targets)
+        #F_loss = self.alpha * (1 - p_t)**self.gamma * BCE_loss
+        F_loss = at * (1 - p_t)**self.gamma * BCE_loss
+
+        F_loss = F_loss[mask]
+
+        if self.reduction == 'mean':
+            return F_loss.mean()
+        elif self.reduction == 'sum':
+            return F_loss.sum()
+        else:
+            return F_loss
+         
 class TraditionalBinaryFocalLoss(nn.Module):
     def __init__(self, alpha: float = 0.25, gamma: float = 2.0, reduction: str = 'mean'):
         super(TraditionalBinaryFocalLoss, self).__init__()
@@ -131,7 +157,37 @@ class FocalTverskyLoss(nn.Module):
         # Focal Tversky loss
         focal_tversky_loss = torch.pow((1 - tversky_index), self.gamma)
         return focal_tversky_loss.mean()
+
     
+class MaskedFocalTverskyLoss(nn.Module):
+    def __init__(self, alpha: float = 0.7, gamma: float = 0.75, smooth: float = 1e-6):
+        super(MaskedFocalTverskyLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.smooth = smooth
+
+    def forward(self, y_pred, y_true, mask):
+        y_pred = y_pred[mask]
+        y_true = y_true[mask]
+        # Apply sigmoid to the logits to get the predicted probabilities
+        y_pred = torch.sigmoid(y_pred)
+
+        # Flatten the tensors to make sure that we can perform element-wise multiplications
+        y_pred = y_pred.view(-1)
+        y_true = y_true.view(-1)
+
+        # True positives, false negatives, and false positives
+        true_pos = torch.sum(y_true * y_pred)
+        false_neg = torch.sum(y_true * (1 - y_pred))
+        false_pos = torch.sum((1 - y_true) * y_pred)
+
+        # Tversky index
+        tversky_index = (true_pos + self.smooth) / (true_pos + self.alpha * false_neg + (1 - self.alpha) * false_pos + self.smooth)
+
+        # Focal Tversky loss
+        focal_tversky_loss = torch.pow((1 - tversky_index), self.gamma)
+        return focal_tversky_loss.mean()
+       
 class SymmetricUnifiedFocalLoss(nn.Module):
   def __init__(self, delta:float=0.6, gamma:float=0.5, smooth:float=1e-6):
     super(SymmetricUnifiedFocalLoss, self).__init__()
@@ -139,7 +195,15 @@ class SymmetricUnifiedFocalLoss(nn.Module):
     self.focal_tve = FocalTverskyLoss(alpha=delta, gamma=gamma, smooth=smooth)
   def forward(self, y_pred, y_true):
     return self.focal_cross(y_pred, y_true) + self.focal_tve(y_pred, y_true)
-  
+
+class MaskedSymmetricUnifiedFocalLoss(nn.Module):
+  def __init__(self, delta:float=0.6, gamma:float=0.5, smooth:float=1e-6):
+    super(MaskedSymmetricUnifiedFocalLoss, self).__init__()
+    self.focal_cross = MaskedBinaryFocalLoss(alpha=delta, gamma=1-gamma)
+    self.focal_tve = MaskedFocalTverskyLoss(alpha=delta, gamma=gamma, smooth=smooth)
+  def forward(self, y_pred, y_true, mask):
+    return self.focal_cross(y_pred, y_true, mask) + self.focal_tve(y_pred, y_true, mask)
+   
 class CrossFocalLoss(nn.Module):
     def __init__(self, gamma:float=2.0, reduction:str='mean'):
         super(CrossFocalLoss, self).__init__()
@@ -199,6 +263,20 @@ class BoundaryLoss():
         probs = F.sigmoid(logits)
         multipled = einsum("bkxyz,bkxyz->bkxyz", probs, dist_maps)
 
+        loss = multipled.mean()
+
+        return loss
+    
+class MaskedBoundaryLoss():
+    def __init__(self, **kwargs):
+        # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
+        self.idc: List[int] = kwargs["idc"]
+        print(f"Initialized {self.__class__.__name__} with {kwargs}")
+
+    def __call__(self, logits: Tensor, dist_maps: Tensor, mask: Tensor) -> Tensor:        
+        probs = F.sigmoid(logits)
+        multipled = einsum("bkxyz,bkxyz->bkxyz", probs, dist_maps)
+        multipled = multipled[mask]
         loss = multipled.mean()
 
         return loss

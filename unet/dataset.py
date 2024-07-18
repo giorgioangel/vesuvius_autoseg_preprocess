@@ -150,12 +150,13 @@ class SynthData2(Dataset):
         return block
 
 class AnnotatedCubes(Dataset):
-    def __init__(self, input_folder):
+    def __init__(self, input_folder, size=256):
         self.input_folder = input_folder
         self.data = self._load_data()
         self.disttransform = dist_map_transform([1, 1, 1])
         self.transforms = get_transforms_ann()
         self.struct = ball(1)
+        self.size = size
 
     def _load_data(self):
         data = []
@@ -163,11 +164,12 @@ class AnnotatedCubes(Dataset):
             subdir_path = os.path.join(self.input_folder, subdir)
             if os.path.isdir(subdir_path):
                 # Extract z, y, x from the subdir name
-                _, z, y, x = subdir.split('_')
-                volume_file = os.path.join(subdir_path, f'volume_{z}_{y}_{x}.nrrd')
-                mask_file = os.path.join(subdir_path, f'mask_{z}_{y}_{x}.nrrd')
+                z, y, x = subdir.split('_')
+                volume_file = os.path.join(subdir_path, f'{z}_{y}_{x}_volume.nrrd')
+                mask_file = os.path.join(subdir_path, f'{z}_{y}_{x}_mask.nrrd')
                 if os.path.exists(volume_file) and os.path.exists(mask_file):
                     data.append((volume_file, mask_file))
+        print(f"Dataset length: {len(data)}")
         return data
 
     def __len__(self):
@@ -199,8 +201,15 @@ class AnnotatedCubes(Dataset):
 
     def __getitem__(self, idx):
         volume_path, mask_path = self.data[idx]
+        #print(volume_path, mask_path)
         volume, _ = nrrd.read(volume_path)
         mask, _ = nrrd.read(mask_path)
+
+        if self.size < volume.shape[0]:
+            corner = np.random.randint(0,volume.shape[0]-self.size, size=3)
+            volume = volume[corner[0]:corner[0]+self.size, corner[1]:corner[1]+self.size, corner[2]:corner[2]+self.size]
+            mask = mask[corner[0]:corner[0]+self.size, corner[1]:corner[1]+self.size, corner[2]:corner[2]+self.size]
+
         mask = self.preprocess_mask(mask)
 
         volume = np.expand_dims(volume, axis=0).astype(np.float32)/255
@@ -214,6 +223,8 @@ class AnnotatedCubes(Dataset):
         mask = torch.tensor(transformed['seg'], dtype=torch.float32)
 
         dist_map_tensor = self.disttransform(mask)
+
+        assert volume.dim() == mask.dim(), f"{volume_path}"
 
         return volume, mask, dist_map_tensor
 
@@ -417,7 +428,7 @@ def get_transforms_ann():
     transforms = Compose([
         MirrorTransform((0, 1, 2)),  # Random flips
         RandomPermuteAxesTransformAnnCubes(),
-        ContrastAugmentationTransform(),
+        #ContrastAugmentationTransform(),
     ])
     return transforms
 
