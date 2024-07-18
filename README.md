@@ -41,7 +41,7 @@ UPDATE: We are currently focusing on Semantic (and Instance) segmentation with D
 #### 3D UX-Net
 - **(UPDATE) 3D UX-Net training script** `.\unet\train_uxnet.py --config config-uxnet.yaml`
 - **Description**: Training script to train a 3D UX-Net [(Lee et al., 2023)](https://arxiv.org/abs/2209.15076) (model code taken from https://github.com/MASILab/3DUX-Net/tree/main) for Semantic Segmentation. Used loss function is a mixture of Binary Focal Loss and Boundary Loss [(Kervadec et al., 2021)](https://arxiv.org/abs/1812.07032).
-- **checkpoints**: (https://dl.ash2txt.org/other/semantic-segmentation-checkpoints/160724_uxnet_mask_epoch_28.pth)
+- **checkpoints**: (https://dl.ash2txt.org/other/semantic-segmentation-checkpoints/160724_uxnet_mask_epoch_20.pth)
 
 #### 3D UNet
 - **training script** `.\unet\train.py --config config.yaml`

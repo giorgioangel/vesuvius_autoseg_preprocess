@@ -4,31 +4,30 @@ wandb:
   run_name: "soft_masked"
 
 training:
-  seed: 1234
-  current_checkpoint: "./checkpoints/final_model_cubes.pth"
-  prefetch_factor: 1
+  seed: 1891 #1234
+  current_checkpoint: "/app/scrolls/giorgio/unet/checkpoints/160724_uxnet_mask_epoch_28.pth" #uxnet_mask_epoch_18, 28 (non,mask:44)
+  prefetch_factor: 4 #4
   persistent_workers: True
-  ema_beta: 0.998
-  num_epochs: 30
-  scheduler_epochs: 200
-  epoch_size: 100
-  batch_size: 4
-  workers: 16
+  ema: False
+  ema_beta: 0.999
+  ema_step: 10
+  num_epochs: 100
+  scheduler_epochs: 100
+  #scheduler_epochs: 100 hyperstrict
+  epoch_size: 24
+  batch_size: 4 #6 #12
+  workers: 16 # 16
   amp: True
-  warmup_factor: 1
-  lr: 0.001
+  warmup_epochs: 5
+  lr : 0.001
+  #lr: 0.0001 
+  #lr: 0.00001 hyperstrict
   min_lr: 0.000001
   weight_decay: 0.00001
-  max_grad_norm: 3
+  max_grad_norm: 10
   synthetic_ratio: 0.4
   boundary_alpha: 1
-  
-model:
-  in_channels: 1
-  out_channels: 1
-  channels: [64, 128, 320, 512, 768, 1024]
-  strides: [4, 2, 2, 2, 2]
-  kernel_size: [7, 3, 3, 3, 3]
+  cube_size: 128
 
 
 data:
@@ -46,7 +45,6 @@ distributed:
 
 inference:
   seed: 42
-  #weights_path: './checkpoints/140724_epoch_20.pth'
   weights_path: './checkpoints/160724_uxnet_mask_epoch_28.pth'
   output_dir: './uxnet_mask_160724_0.5/'
   max_chunk_size: 1024

@@ -1,4 +1,4 @@
-# Semantic Segmentation with 3D UXNet
+# Semantic Segmentation with 3D UX-Net
 import yaml
 import argparse
 import torch
